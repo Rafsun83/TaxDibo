@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import TaxRequestModal from "../components/TaxRequestModal";
 
 const TAX_SLABS = [
   { limit: 375_000,   rate: 0,    label: "First Tk. 3.75 lac" },
@@ -39,6 +41,7 @@ function fmt(amount: number) {
 
 export default function HomePage() {
   const [monthly, setMonthly] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
   const monthlySalary = parseFloat(monthly) || 0;
   const annualIncome = monthlySalary * 12;
@@ -87,7 +90,13 @@ export default function HomePage() {
             />
           </div>
         </div>
+
+        <Button className="mt-5 w-fit" onClick={() => setShowModal(true)}>
+          Request for Tax Pay
+        </Button>
       </article>
+
+      {showModal && <TaxRequestModal onClose={() => setShowModal(false)} />}
 
       {/* Summary stats */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
