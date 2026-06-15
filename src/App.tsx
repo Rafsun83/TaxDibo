@@ -37,10 +37,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_25%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#172554_100%)] text-foreground">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 p-4 lg:flex-row lg:p-6">
+      {/* max-w-7xl  */}
+      <div className="mx-auto flex min-h-screen w-full flex-col gap-6 p-4 lg:flex-row lg:p-6">
         <Sidebar isProfileRoute={isProfileRoute} />
 
-        <main className="flex min-h-[calc(100vh-2rem)] flex-1 flex-col rounded-3xl border border-border/70 bg-card/95 shadow-2xl shadow-black/10 backdrop-blur">
+        <main className="flex min-h-[calc(100vh-2rem)] flex-1 flex-col rounded-xl border border-border/70 bg-card/95 shadow-2xl shadow-black/10 backdrop-blur">
           <Header
             isProfileRoute={isProfileRoute}
             theme={theme}

@@ -11,7 +11,7 @@ export default function Sidebar({ isProfileRoute }: SidebarProps) {
   const navigate = useNavigate();
 
   return (
-    <aside className="w-full rounded-3xl border border-border/70 bg-card/95 p-4 shadow-2xl shadow-black/10 backdrop-blur xl:w-72">
+    <aside className="w-full rounded-xl border border-border/70 bg-card/95 p-4 shadow-2xl shadow-black/10 backdrop-blur xl:w-72">
       <div className="flex items-center gap-3 border-b border-border/80 pb-4">
         <div className="grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
           <Home className="size-5" />
@@ -26,8 +26,9 @@ export default function Sidebar({ isProfileRoute }: SidebarProps) {
 
       <nav className="mt-6 space-y-2">
         <Button
-          variant={isProfileRoute ? "ghost" : "secondary"}
-          className="w-full justify-start gap-3 rounded-2xl px-3 py-6 text-left shadow-none"
+          variant="secondary"
+          // variant={isProfileRoute ? "ghost" : "secondary"}
+          className="w-full justify-start gap-3 rounded-xl px-3 py-6 text-left shadow-none cursor-pointer"
           onClick={() => navigate("/")}
         >
           <Home className="size-4" />
@@ -35,8 +36,9 @@ export default function Sidebar({ isProfileRoute }: SidebarProps) {
         </Button>
 
         <Button
-          variant={isProfileRoute ? "secondary" : "ghost"}
-          className="w-full justify-start gap-3 rounded-2xl px-3 py-6 text-left"
+          // variant={isProfileRoute ? "secondary" : "secondary"}
+          variant="secondary"
+          className="w-full justify-start gap-3 rounded-xl px-3 py-6 text-left shadow-none cursor-pointer"
           onClick={() => navigate("/profile")}
         >
           <UserRound className="size-4" />
