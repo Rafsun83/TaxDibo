@@ -4,16 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
-  isProfileRoute: boolean;
+  title: string;
   theme: "light" | "dark";
   onToggleTheme: () => void;
 }
 
-export default function Header({
-  isProfileRoute,
-  theme,
-  onToggleTheme,
-}: HeaderProps) {
+export default function Header({ title, theme, onToggleTheme }: HeaderProps) {
   const navigate = useNavigate();
 
   return (
@@ -22,9 +18,7 @@ export default function Header({
         <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
           Workspace
         </p>
-        <h1 className="text-2xl font-semibold md:text-3xl">
-          {isProfileRoute ? "Profile view" : "Home view"}
-        </h1>
+        <h1 className="text-2xl font-semibold md:text-3xl">{title}</h1>
       </div>
 
       <div className="flex items-center gap-2 md:gap-3">

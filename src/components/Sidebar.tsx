@@ -1,14 +1,17 @@
-import { Home, UserRound } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { FileText, Home, UserRound } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 
-interface SidebarProps {
-  isProfileRoute: boolean;
-}
+const NAV_ITEMS = [
+  { label: "Home", path: "/", icon: Home },
+  { label: "Profile", path: "/profile", icon: UserRound },
+  { label: "Documents", path: "/documents", icon: FileText },
+];
 
-export default function Sidebar({ isProfileRoute }: SidebarProps) {
+export default function Sidebar() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   return (
     <aside className="w-full rounded-xl border border-border/70 bg-card/95 p-4 shadow-2xl shadow-black/10 backdrop-blur xl:w-72">
@@ -25,25 +28,17 @@ export default function Sidebar({ isProfileRoute }: SidebarProps) {
       </div>
 
       <nav className="mt-6 space-y-2">
-        <Button
-          variant="secondary"
-          // variant={isProfileRoute ? "ghost" : "secondary"}
-          className="w-full justify-start gap-3 rounded-xl px-3 py-6 text-left shadow-none cursor-pointer"
-          onClick={() => navigate("/")}
-        >
-          <Home className="size-4" />
-          <span>Home</span>
-        </Button>
-
-        <Button
-          // variant={isProfileRoute ? "secondary" : "secondary"}
-          variant="secondary"
-          className="w-full justify-start gap-3 rounded-xl px-3 py-6 text-left shadow-none cursor-pointer"
-          onClick={() => navigate("/profile")}
-        >
-          <UserRound className="size-4" />
-          <span>Profile</span>
-        </Button>
+        {NAV_ITEMS.map(({ label, path, icon: Icon }) => (
+          <Button
+            key={path}
+            variant={pathname === path ? "secondary" : "ghost"}
+            className="w-full cursor-pointer justify-start gap-3 rounded-xl px-3 py-6 text-left shadow-none"
+            onClick={() => navigate(path)}
+          >
+            <Icon className="size-4" />
+            <span>{label}</span>
+          </Button>
+        ))}
       </nav>
 
       <div className="mt-8 rounded-3xl border border-border/70 bg-muted/60 p-4 text-sm text-muted-foreground">
@@ -51,8 +46,7 @@ export default function Sidebar({ isProfileRoute }: SidebarProps) {
           Overview
         </p>
         <p className="mt-2 text-foreground">
-          Click Home or Profile in the navigation to switch between the two
-          route views.
+          Navigate between Home, Profile, and Documents using the menu above.
         </p>
       </div>
     </aside>
