@@ -15,6 +15,9 @@ const PAGE_TITLES: Record<string, string> = {
 
 function App() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => window.localStorage.getItem("taxdibo-sidebar-collapsed") === "true",
+  );
   const { pathname } = useLocation();
 
   const title = PAGE_TITLES[pathname] ?? "Dashboard";
@@ -42,20 +45,29 @@ function App() {
     window.localStorage.setItem("taxdibo-theme", nextTheme);
   };
 
-  return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_25%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#172554_100%)] text-foreground">
-      {/* max-w-7xl  */}
-      <div className="mx-auto flex min-h-screen w-full flex-col gap-6 p-4 lg:flex-row lg:p-6">
-        <Sidebar />
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      window.localStorage.setItem("taxdibo-sidebar-collapsed", String(next));
+      return next;
+    });
+  };
 
-        <main className="flex min-h-[calc(100vh-2rem)] flex-1 flex-col rounded-xl border border-border/70 bg-card/95 shadow-2xl shadow-black/10 backdrop-blur">
+  return (
+    <div className="h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.12),transparent_25%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#172554_100%)] text-foreground">
+      <div className="mx-auto flex h-full w-full gap-4 p-4 lg:gap-6 lg:p-6">
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+
+        <main className="flex h-full flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xl shadow-black/10 backdrop-blur">
           <Header title={title} theme={theme} onToggleTheme={toggleTheme} />
 
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/documents" element={<DocumentsPage />} />
-          </Routes>
+          <div className="flex-1 overflow-y-auto">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
+            </Routes>
+          </div>
         </main>
       </div>
     </div>
