@@ -1,41 +1,70 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../context/AuthContext";
+import { ApiError } from "../lib/api/client";
+import { createAppointment } from "../lib/api/appointments";
+import type { AppointmentPurpose } from "../lib/api/types";
 
 interface TaxRequestModalProps {
   onClose: () => void;
 }
 
-const FIELDS = [
-  { name: "fullName",     label: "Full Name",     type: "text",  placeholder: "John Doe" },
-  { name: "email",        label: "Email",          type: "email", placeholder: "john@example.com" },
-  { name: "phone",        label: "Phone",          type: "tel",   placeholder: "+880 1X XX XXX XXX" },
-  { name: "tinNumber",       label: "TIN Number",      type: "text", placeholder: "12-digit TIN" },
-  { name: "companyName",    label: "Company Name",    type: "text", placeholder: "Your company" },
-  { name: "officeAddress",  label: "Office Address",  type: "text", placeholder: "123 Business Ave, Dhaka" },
-  { name: "livingAddress",  label: "Living Address",  type: "text", placeholder: "456 Home Street, Dhaka" },
-] as const;
+const PURPOSE_OPTIONS: { value: AppointmentPurpose; label: string }[] = [
+  { value: "TAX_SUBMISSION", label: "Tax submission" },
+  { value: "TAX_CONSULTATION", label: "Tax consultation" },
+  { value: "DOCUMENT_REVIEW", label: "Document review" },
+  { value: "OTHER", label: "Other" },
+];
 
-type FieldName = (typeof FIELDS)[number]["name"];
-type FormState = Record<FieldName, string>;
+interface FormState {
+  name: string;
+  email: string;
+  phone: string;
+  tin: string;
+  purpose: AppointmentPurpose;
+  appointmentDate: string;
+}
 
-const EMPTY: FormState = {
-  fullName: "",
-  email: "",
-  phone: "",
-  tinNumber: "",
-  companyName: "",
-  officeAddress: "",
-  livingAddress: "",
-};
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export default function TaxRequestModal({ onClose }: TaxRequestModalProps) {
-  const [form, setForm] = useState<FormState>(EMPTY);
-  const [submitted, setSubmitted] = useState(false);
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [form, setForm] = useState<FormState>({
+    name: user?.name ?? "",
+    email: user?.email ?? "",
+    phone: user?.phone ?? "",
+    tin: user?.TIN ?? "",
+    purpose: "TAX_SUBMISSION",
+    appointmentDate: "",
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setError(null);
+    setFieldErrors({});
+    setSubmitting(true);
+    try {
+      await createAppointment(form);
+      setSubmitted(true);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+        setFieldErrors(err.errors ?? {});
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -85,27 +114,111 @@ export default function TaxRequestModal({ onClose }: TaxRequestModalProps) {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {FIELDS.map(({ name, label, type, placeholder }) => (
-                <label key={name} className="flex flex-col gap-1.5">
-                  <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                    {label}
-                  </span>
-                  <input
-                    type={type}
-                    placeholder={placeholder}
-                    required
-                    value={form[name]}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, [name]: e.target.value }))
-                    }
-                    className="rounded-xl border border-border/70 bg-muted/60 px-4 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-ring/40"
-                  />
-                </label>
-              ))}
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                  Full Name
+                </span>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  required
+                  value={form.name}
+                  onChange={(e) => setField("name", e.target.value)}
+                  className="rounded-xl border border-border/70 bg-muted/60 px-4 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-ring/40"
+                />
+                {fieldErrors.name && <span className="text-xs text-destructive">{fieldErrors.name}</span>}
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                  Email
+                </span>
+                <input
+                  type="email"
+                  placeholder="john@example.com"
+                  required
+                  value={form.email}
+                  onChange={(e) => setField("email", e.target.value)}
+                  className="rounded-xl border border-border/70 bg-muted/60 px-4 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-ring/40"
+                />
+                {fieldErrors.email && <span className="text-xs text-destructive">{fieldErrors.email}</span>}
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                  Phone
+                </span>
+                <input
+                  type="tel"
+                  placeholder="+880 1X XX XXX XXX"
+                  required
+                  value={form.phone}
+                  onChange={(e) => setField("phone", e.target.value)}
+                  className="rounded-xl border border-border/70 bg-muted/60 px-4 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-ring/40"
+                />
+                {fieldErrors.phone && <span className="text-xs text-destructive">{fieldErrors.phone}</span>}
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                  TIN Number
+                </span>
+                <input
+                  type="text"
+                  placeholder="10 or 12 digit TIN"
+                  required
+                  pattern="\d{10}|\d{12}"
+                  title="TIN must be exactly 10 or 12 digits"
+                  value={form.tin}
+                  onChange={(e) => setField("tin", e.target.value)}
+                  className="rounded-xl border border-border/70 bg-muted/60 px-4 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-ring/40"
+                />
+                {fieldErrors.tin && <span className="text-xs text-destructive">{fieldErrors.tin}</span>}
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                  Purpose
+                </span>
+                <select
+                  required
+                  value={form.purpose}
+                  onChange={(e) => setField("purpose", e.target.value as AppointmentPurpose)}
+                  className="rounded-xl border border-border/70 bg-muted/60 px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/40"
+                >
+                  {PURPOSE_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+                {fieldErrors.purpose && <span className="text-xs text-destructive">{fieldErrors.purpose}</span>}
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                  Appointment Date
+                </span>
+                <input
+                  type="date"
+                  required
+                  min={todayIso()}
+                  value={form.appointmentDate}
+                  onChange={(e) => setField("appointmentDate", e.target.value)}
+                  className="rounded-xl border border-border/70 bg-muted/60 px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/40"
+                />
+                {fieldErrors.appointmentDate && (
+                  <span className="text-xs text-destructive">{fieldErrors.appointmentDate}</span>
+                )}
+              </label>
+
+              {error && (
+                <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
 
               <div className="flex gap-3 pt-2">
-                <Button type="submit" className="flex-1">
-                  Submit Request
+                <Button type="submit" className="flex-1" disabled={submitting}>
+                  {submitting ? "Submitting..." : "Submit Request"}
                 </Button>
                 <Button type="button" variant="outline" onClick={onClose}>
                   Cancel

@@ -3,11 +3,13 @@ import {
   ChevronsRight,
   FileText,
   Home,
+  Users,
   UserRound,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../context/AuthContext";
 
 const NAV_ITEMS = [
   { label: "Home", path: "/", icon: Home },
@@ -23,6 +25,11 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { isAdmin } = useAuth();
+
+  const navItems = isAdmin
+    ? [...NAV_ITEMS, { label: "Users", path: "/users", icon: Users }]
+    : NAV_ITEMS;
 
   return (
     <aside
@@ -45,7 +52,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </div>
 
       <nav className="mt-6 flex-1 space-y-2 overflow-y-auto">
-        {NAV_ITEMS.map(({ label, path, icon: Icon }) => (
+        {navItems.map(({ label, path, icon: Icon }) => (
           <Button
             key={path}
             variant={pathname === path ? "secondary" : "ghost"}
