@@ -7,6 +7,7 @@ import Sidebar from "./Sidebar";
 const PAGE_TITLES: Record<string, string> = {
   "/": "Home view",
   "/profile": "Profile view",
+  "/appointments": "Appointments view",
   "/documents": "Documents view",
   "/users": "Users view",
 };

@@ -1,4 +1,5 @@
 import {
+  CalendarCheck,
   ChevronsLeft,
   ChevronsRight,
   FileText,
@@ -13,9 +14,11 @@ import { useAuth } from "../context/AuthContext";
 
 const NAV_ITEMS = [
   { label: "Home", path: "/", icon: Home },
-  { label: "Profile", path: "/profile", icon: UserRound },
   { label: "Documents", path: "/documents", icon: FileText },
+  { label: "Appointments", path: "/appointments", icon: CalendarCheck },
 ];
+
+const PROFILE_ITEM = { label: "Profile", path: "/profile", icon: UserRound };
 
 interface SidebarProps {
   collapsed: boolean;
@@ -30,6 +33,26 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navItems = isAdmin
     ? [...NAV_ITEMS, { label: "Users", path: "/users", icon: Users }]
     : NAV_ITEMS;
+
+  const renderNavButton = ({
+    label,
+    path,
+    icon: Icon,
+  }: (typeof NAV_ITEMS)[number]) => (
+    <Button
+      key={path}
+      variant={pathname === path ? "secondary" : "ghost"}
+      className={`w-full cursor-pointer  rounded-md px-2 py-4 text-left shadow-none ${
+        collapsed ? "justify-center" : "justify-start"
+      }`}
+      title={collapsed ? label : undefined}
+      aria-label={label}
+      onClick={() => navigate(path)}
+    >
+      <Icon className="size-4 shrink-0" />
+      {!collapsed && <span>{label}</span>}
+    </Button>
+  );
 
   return (
     <aside
@@ -51,34 +74,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         )}
       </div>
 
-      <nav className="mt-6 flex-1 space-y-2 overflow-y-auto">
-        {navItems.map(({ label, path, icon: Icon }) => (
-          <Button
-            key={path}
-            variant={pathname === path ? "secondary" : "ghost"}
-            className={`w-full cursor-pointer gap-3 rounded-xl px-3 py-6 text-left shadow-none ${
-              collapsed ? "justify-center" : "justify-start"
-            }`}
-            title={collapsed ? label : undefined}
-            aria-label={label}
-            onClick={() => navigate(path)}
-          >
-            <Icon className="size-4 shrink-0" />
-            {!collapsed && <span>{label}</span>}
-          </Button>
-        ))}
+      <nav className="mt-2 flex-1 space-y-1 overflow-y-auto">
+        {navItems.map(renderNavButton)}
       </nav>
 
-      {!collapsed && (
-        <div className="mt-8 rounded-3xl border border-border/70 bg-muted/60 p-4 text-sm text-muted-foreground">
-          <p className="text-xs uppercase tracking-[0.3em] text-primary">
-            Overview
-          </p>
-          <p className="mt-2 text-foreground">
-            Navigate between Home, Profile, and Documents using the menu above.
-          </p>
-        </div>
-      )}
+      <div className="space-y-2 border-t border-border/80 pt-1">
+        {renderNavButton(PROFILE_ITEM)}
+      </div>
 
       <Button
         variant="outline"

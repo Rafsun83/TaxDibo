@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 
 import DashboardLayout from "./components/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AppointmentsPage from "./screens/AppointmentsPage";
 import DocumentsPage from "./screens/DocumentsPage";
 import HomePage from "./screens/HomePage";
 import LoginPage from "./screens/LoginPage";
@@ -24,6 +25,7 @@ function App() {
       >
         <Route path="/" element={<HomePage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/appointments" element={<AppointmentsPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/users" element={<UsersPage />} />
       </Route>
