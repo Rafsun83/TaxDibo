@@ -26,7 +26,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   return (
     <aside
-      className={`flex h-full shrink-0 flex-col rounded-xl border border-border/70 bg-card/95 p-4 shadow-2xl shadow-black/10 backdrop-blur transition-[width] duration-300 ${
+      className={`flex h-full shrink-0 flex-col rounded-sm border border-border/70 bg-card/95 p-4 shadow-2xl shadow-black/10 backdrop-blur transition-[width] duration-300 ${
         collapsed ? "w-20" : "w-72"
       }`}
     >
@@ -68,8 +68,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             Overview
           </p>
           <p className="mt-2 text-foreground">
-            Navigate between Home, Profile, and Documents using the menu
-            above.
+            Navigate between Home, Profile, and Documents using the menu above.
           </p>
         </div>
       )}
