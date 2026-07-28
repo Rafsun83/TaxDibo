@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Download, FileText, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, Check, Download, Eye, FileText, Loader2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ApiError } from "../lib/api/client";
@@ -89,6 +89,53 @@ function TrackingBar({ status }: { status: AppointmentStatus }) {
   );
 }
 
+function PreviewModal({
+  doc,
+  objectUrl,
+  onClose,
+}: {
+  doc: DocumentMeta;
+  objectUrl: string;
+  onClose: () => void;
+}) {
+  const isImage = doc.contentType.startsWith("image/");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      <div
+        className="relative z-10 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-2xl shadow-black/40"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border/80 px-6 py-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
+              Document preview
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">{doc.originalFileName}</h2>
+          </div>
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={onClose} aria-label="Close modal">
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <div className="overflow-y-auto p-6">
+          {isImage ? (
+            <img src={objectUrl} alt={doc.originalFileName} className="mx-auto max-h-[70vh] rounded-2xl" />
+          ) : doc.contentType === "application/pdf" ? (
+            <iframe src={objectUrl} title={doc.originalFileName} className="h-[70vh] w-full rounded-2xl border border-border/70" />
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Preview isn't available for this file type. Use Download to save it locally.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppointmentDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -100,6 +147,7 @@ export default function AppointmentDetailsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [busyDocId, setBusyDocId] = useState<number | null>(null);
+  const [preview, setPreview] = useState<{ doc: DocumentMeta; url: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAppointment = useCallback(async () => {
@@ -135,6 +183,23 @@ export default function AppointmentDetailsPage() {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleView = async (doc: DocumentMeta) => {
+    setBusyDocId(doc.id);
+    try {
+      const { blob } = await downloadDocument(doc.id);
+      setPreview({ doc, url: URL.createObjectURL(blob) });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to open document.");
+    } finally {
+      setBusyDocId(null);
+    }
+  };
+
+  const closePreview = () => {
+    if (preview) URL.revokeObjectURL(preview.url);
+    setPreview(null);
   };
 
   const handleDownload = async (doc: DocumentMeta) => {
@@ -259,15 +324,26 @@ export default function AppointmentDetailsPage() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 gap-1.5 rounded-xl text-xs"
-                      disabled={busyDocId === doc.id}
-                      onClick={() => handleDownload(doc)}
-                    >
-                      <Download className="size-3.5" /> Download
-                    </Button>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 rounded-xl text-xs"
+                        disabled={busyDocId === doc.id}
+                        onClick={() => handleView(doc)}
+                      >
+                        <Eye className="size-3.5" /> View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 rounded-xl text-xs"
+                        disabled={busyDocId === doc.id}
+                        onClick={() => handleDownload(doc)}
+                      >
+                        <Download className="size-3.5" /> Download
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -275,6 +351,8 @@ export default function AppointmentDetailsPage() {
           </article>
         </>
       )}
+
+      {preview && <PreviewModal doc={preview.doc} objectUrl={preview.url} onClose={closePreview} />}
     </section>
   );
 }
