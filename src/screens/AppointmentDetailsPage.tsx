@@ -4,6 +4,7 @@ import {
   Download,
   Eye,
   FileText,
+  FolderOpen,
   LayoutGrid,
   List,
   Loader2,
@@ -19,7 +20,7 @@ import {
   uploadAppointmentDocument,
 } from "../lib/api/appointments";
 import { ApiError } from "../lib/api/client";
-import { downloadDocument } from "../lib/api/documents";
+import { downloadDocument, listDocuments } from "../lib/api/documents";
 import type {
   AppointmentDetails,
   AppointmentPurpose,
@@ -186,6 +187,117 @@ function PreviewModal({
   );
 }
 
+function ExistingDocumentsModal({
+  documents,
+  loading,
+  error,
+  attachingDocId,
+  attachError,
+  onAttach,
+  onClose,
+}: {
+  documents: DocumentMeta[] | null;
+  loading: boolean;
+  error: string | null;
+  attachingDocId: number | null;
+  attachError: string | null;
+  onAttach: (doc: DocumentMeta) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      <div
+        className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-2xl shadow-black/40"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border/80 px-6 py-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
+              Reuse a document
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">
+              Choose an existing document
+            </h2>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <div className="overflow-y-auto">
+          {attachError && (
+            <p className="mx-6 mt-4 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+              {attachError}
+            </p>
+          )}
+          {error && (
+            <p className="mx-6 mt-4 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+              {error}
+            </p>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> Loading your
+              documents...
+            </div>
+          ) : !documents || documents.length === 0 ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              You don't have any other documents to reuse yet.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border/50">
+              {documents.map((doc) => (
+                <li
+                  key={doc.id}
+                  className="flex items-center justify-between gap-3 px-6 py-4"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground">
+                      <FileText className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {doc.originalFileName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatBytes(doc.fileSize)} ·{" "}
+                        {formatDate(doc.uploadedAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="shrink-0 gap-1.5 rounded-xl text-xs"
+                    disabled={attachingDocId === doc.id}
+                    onClick={() => onAttach(doc)}
+                  >
+                    {attachingDocId === doc.id ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : null}
+                    {attachingDocId === doc.id ? "Attaching..." : "Attach"}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppointmentDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -205,6 +317,14 @@ export default function AppointmentDetailsPage() {
   } | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({});
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerDocuments, setPickerDocuments] = useState<DocumentMeta[] | null>(
+    null,
+  );
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerError, setPickerError] = useState<string | null>(null);
+  const [attachingDocId, setAttachingDocId] = useState<number | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const requestedThumbnails = useRef<Set<number>>(new Set());
   const thumbnailUrlsRef = useRef<string[]>([]);
@@ -274,6 +394,53 @@ export default function AppointmentDetailsPage() {
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const openPicker = async () => {
+    setShowPicker(true);
+    setAttachError(null);
+    setPickerLoading(true);
+    setPickerError(null);
+    try {
+      const result = await listDocuments({ size: 50 });
+      setPickerDocuments(
+        result.content.filter((doc) => doc.appointmentId !== appointmentId),
+      );
+    } catch (err) {
+      setPickerError(
+        err instanceof ApiError ? err.message : "Failed to load your documents.",
+      );
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const closePicker = () => {
+    setShowPicker(false);
+    setPickerDocuments(null);
+  };
+
+  // The backend has no "link existing document" endpoint, so reusing a document
+  // means re-fetching its bytes and re-uploading them against this appointment —
+  // the user just doesn't have to browse their device for the file again.
+  const handleAttachExisting = async (doc: DocumentMeta) => {
+    setAttachingDocId(doc.id);
+    setAttachError(null);
+    try {
+      const { blob } = await downloadDocument(doc.id);
+      const file = new File([blob], doc.originalFileName, {
+        type: doc.contentType,
+      });
+      await uploadAppointmentDocument(appointmentId, file);
+      await fetchAppointment();
+      setPickerDocuments((prev) => prev?.filter((d) => d.id !== doc.id) ?? null);
+    } catch (err) {
+      setAttachError(
+        err instanceof ApiError ? err.message : "Failed to attach document.",
+      );
+    } finally {
+      setAttachingDocId(null);
     }
   };
 
@@ -426,6 +593,14 @@ export default function AppointmentDetailsPage() {
                   onChange={handleUpload}
                 />
                 <Button
+                  variant="outline"
+                  onClick={openPicker}
+                  className="gap-2"
+                >
+                  <FolderOpen className="size-4" />
+                  Choose existing
+                </Button>
+                <Button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   className="gap-2"
@@ -435,7 +610,7 @@ export default function AppointmentDetailsPage() {
                   ) : (
                     <Upload className="size-4" />
                   )}
-                  {uploading ? "Uploading..." : "Upload document"}
+                  {uploading ? "Uploading..." : "Upload from device"}
                 </Button>
               </div>
             </div>
@@ -540,6 +715,18 @@ export default function AppointmentDetailsPage() {
           doc={preview.doc}
           objectUrl={preview.url}
           onClose={closePreview}
+        />
+      )}
+
+      {showPicker && (
+        <ExistingDocumentsModal
+          documents={pickerDocuments}
+          loading={pickerLoading}
+          error={pickerError}
+          attachingDocId={attachingDocId}
+          attachError={attachError}
+          onAttach={handleAttachExisting}
+          onClose={closePicker}
         />
       )}
     </section>
