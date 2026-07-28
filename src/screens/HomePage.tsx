@@ -1,14 +1,14 @@
-import { useState } from "react";
 import { ArrowRight, BadgeCheck, ShieldCheck, Users } from "lucide-react";
+import { useState } from "react";
 import TaxRequestModal from "../components/TaxRequestModal";
 
 const TAX_SLABS = [
-  { limit: 375_000,   rate: 0,    label: "First Tk. 3.75 lac" },
-  { limit: 300_000,   rate: 0.10, label: "Next Tk. 3 lac" },
-  { limit: 400_000,   rate: 0.15, label: "Next Tk. 4 lac" },
-  { limit: 500_000,   rate: 0.20, label: "Next Tk. 5 lac" },
+  { limit: 375_000, rate: 0, label: "First Tk. 3.75 lac" },
+  { limit: 300_000, rate: 0.1, label: "Next Tk. 3 lac" },
+  { limit: 400_000, rate: 0.15, label: "Next Tk. 4 lac" },
+  { limit: 500_000, rate: 0.2, label: "Next Tk. 5 lac" },
   { limit: 2_000_000, rate: 0.25, label: "Next Tk. 20 lac" },
-  { limit: Infinity,  rate: 0.30, label: "Above Tk. 35.75 lac" },
+  { limit: Infinity, rate: 0.3, label: "Above Tk. 35.75 lac" },
 ];
 
 interface SlabResult {
@@ -18,16 +18,25 @@ interface SlabResult {
   taxAmount: number;
 }
 
-function calculateTax(annualIncome: number): { slabs: SlabResult[]; total: number } {
+function calculateTax(annualIncome: number): {
+  slabs: SlabResult[];
+  total: number;
+} {
   let remaining = annualIncome;
   let total = 0;
   const slabs: SlabResult[] = [];
 
   for (const slab of TAX_SLABS) {
     if (remaining <= 0) break;
-    const taxable = slab.limit === Infinity ? remaining : Math.min(remaining, slab.limit);
+    const taxable =
+      slab.limit === Infinity ? remaining : Math.min(remaining, slab.limit);
     const tax = taxable * slab.rate;
-    slabs.push({ label: slab.label, rate: slab.rate, taxableAmount: taxable, taxAmount: tax });
+    slabs.push({
+      label: slab.label,
+      rate: slab.rate,
+      taxableAmount: taxable,
+      taxAmount: tax,
+    });
     total += tax;
     remaining -= taxable;
   }
@@ -58,15 +67,24 @@ export default function HomePage() {
   const hasResult = monthlySalary > 0;
 
   const STATS = [
-    { label: "Annual Income",   value: hasResult ? `৳ ${fmt(annualIncome)}` : "—" },
-    { label: "Total Annual Tax", value: hasResult ? `৳ ${fmt(annualTax)}` : "—", highlight: true },
-    { label: "Monthly Tax",     value: hasResult ? `৳ ${fmt(monthlyTax)}` : "—" },
-    { label: "Effective Rate",  value: hasResult ? `${effectiveRate.toFixed(2)}%` : "—" },
+    {
+      label: "Annual Income",
+      value: hasResult ? `৳ ${fmt(annualIncome)}` : "—",
+    },
+    {
+      label: "Total Annual Tax",
+      value: hasResult ? `৳ ${fmt(annualTax)}` : "—",
+      highlight: true,
+    },
+    { label: "Monthly Tax", value: hasResult ? `৳ ${fmt(monthlyTax)}` : "—" },
+    {
+      label: "Effective Rate",
+      value: hasResult ? `${effectiveRate.toFixed(2)}%` : "—",
+    },
   ];
 
   return (
     <section className="flex-1 space-y-6 p-4 md:p-6">
-
       {/* ── Hero CTA ────────────────────────────────────────────── */}
       <article className="relative overflow-hidden rounded-3xl bg-primary p-8 shadow-xl shadow-primary/30 md:p-10">
         {/* Decorative rings */}
@@ -83,16 +101,23 @@ export default function HomePage() {
             </span>
 
             <h2 className="mt-4 text-3xl font-bold leading-tight text-primary-foreground md:text-4xl">
-              Simplify Your Tax.<br />Let Experts Handle It.
+              Simplify Your Tax.
+              <br />
+              Let Experts Handle It.
             </h2>
             <p className="mt-3 text-base text-primary-foreground/70">
-              Skip the paperwork and confusion. Submit your request and our certified tax professionals will take care of everything — from calculation to filing.
+              Skip the paperwork and confusion. Submit your request and our
+              certified tax professionals will take care of everything — from
+              calculation to filing.
             </p>
 
             {/* Trust badges */}
             <div className="mt-6 flex flex-wrap gap-4">
               {TRUST_BADGES.map(({ icon: Icon, text }) => (
-                <span key={text} className="flex items-center gap-1.5 text-sm text-primary-foreground/70">
+                <span
+                  key={text}
+                  className="flex items-center gap-1.5 text-sm text-primary-foreground/70"
+                >
                   <Icon className="size-4 text-primary-foreground/50" />
                   {text}
                 </span>
@@ -106,7 +131,7 @@ export default function HomePage() {
               onClick={() => setShowModal(true)}
               className="group flex items-center gap-3 rounded-2xl bg-primary-foreground px-7 py-4 text-base font-semibold text-primary shadow-lg transition hover:scale-[1.03] hover:shadow-xl active:scale-[0.98]"
             >
-              Request for Tax Pay
+              Book An Appointment
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </button>
             <p className="text-xs text-primary-foreground/50">
@@ -160,7 +185,9 @@ export default function HomePage() {
             <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
               {label}
             </p>
-            <p className={`mt-3 text-2xl font-semibold ${highlight ? "text-primary" : "text-foreground"}`}>
+            <p
+              className={`mt-3 text-2xl font-semibold ${highlight ? "text-primary" : "text-foreground"}`}
+            >
               {value}
             </p>
           </article>
@@ -184,24 +211,38 @@ export default function HomePage() {
               <tr className="border-b border-border/70 text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 <th className="px-6 py-3 text-left font-medium">Income slab</th>
                 <th className="px-6 py-3 text-right font-medium">Rate</th>
-                <th className="px-6 py-3 text-right font-medium">Taxable amount</th>
+                <th className="px-6 py-3 text-right font-medium">
+                  Taxable amount
+                </th>
                 <th className="px-6 py-3 text-right font-medium">Tax</th>
               </tr>
             </thead>
             <tbody>
-              {(hasResult ? slabs : TAX_SLABS.map((s) => ({ label: s.label, rate: s.rate, taxableAmount: 0, taxAmount: 0 }))).map((row, i, arr) => (
+              {(hasResult
+                ? slabs
+                : TAX_SLABS.map((s) => ({
+                    label: s.label,
+                    rate: s.rate,
+                    taxableAmount: 0,
+                    taxAmount: 0,
+                  }))
+              ).map((row, i, arr) => (
                 <tr
                   key={row.label}
                   className={`transition-colors hover:bg-muted/40 ${i !== arr.length - 1 ? "border-b border-border/50" : ""}`}
                 >
-                  <td className="px-6 py-4 font-medium text-foreground">{row.label}</td>
+                  <td className="px-6 py-4 font-medium text-foreground">
+                    {row.label}
+                  </td>
                   <td className="px-6 py-4 text-right text-muted-foreground">
                     {(row.rate * 100).toFixed(0)}%
                   </td>
                   <td className="px-6 py-4 text-right text-muted-foreground">
                     {hasResult ? `৳ ${fmt(row.taxableAmount)}` : "—"}
                   </td>
-                  <td className={`px-6 py-4 text-right font-semibold ${hasResult && row.taxAmount > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                  <td
+                    className={`px-6 py-4 text-right font-semibold ${hasResult && row.taxAmount > 0 ? "text-foreground" : "text-muted-foreground"}`}
+                  >
                     {hasResult ? `৳ ${fmt(row.taxAmount)}` : "—"}
                   </td>
                 </tr>
@@ -210,7 +251,10 @@ export default function HomePage() {
             {hasResult && (
               <tfoot>
                 <tr className="border-t-2 border-border/70 bg-muted/30">
-                  <td colSpan={3} className="px-6 py-4 font-semibold text-foreground">
+                  <td
+                    colSpan={3}
+                    className="px-6 py-4 font-semibold text-foreground"
+                  >
                     Total Annual Tax
                   </td>
                   <td className="px-6 py-4 text-right text-lg font-bold text-primary">

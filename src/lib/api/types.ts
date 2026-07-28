@@ -4,6 +4,16 @@ export interface AuthUser {
   email: string;
   phone: string;
   TIN: string | null;
+  company: string | null;
+  address: string | null;
+}
+
+export interface UpdateUserPayload {
+  name: string;
+  phone: string;
+  tin: string;
+  company?: string;
+  address?: string;
 }
 
 export interface AuthResponse {

@@ -48,7 +48,9 @@ Content-Type: application/json
     "name": "Rafsun Jani",
     "email": "rafsun@example.com",
     "phone": "+8801711000000",
-    "TIN": null
+    "TIN": null,
+    "company": "QuestionPro",
+    "address": "Dhaka, Bangladesh"
   }
 }
 ```
@@ -138,14 +140,18 @@ Authorization: Bearer <admin token>
     "name": "Rafsun Jani",
     "email": "rafsun@example.com",
     "phone": "+8801711000000",
-    "TIN": null
+    "TIN": null,
+    "company": "QuestionPro",
+    "address": "Dhaka, Bangladesh"
   },
   {
     "id": 2,
     "name": "Another User",
     "email": "another@example.com",
     "phone": "+8801711000001",
-    "TIN": "1234567890"
+    "TIN": "1234567890",
+    "company": null,
+    "address": null
   }
 ]
 ```
@@ -160,7 +166,69 @@ Authorization: Bearer <admin token>
 }
 ```
 
-## 6. Book an appointment — `POST /api/appointments`
+## 6. Get my user details — `GET /api/users/me`
+
+```
+GET /api/users/me
+Authorization: Bearer <token>
+```
+
+Returns the full profile of the currently authenticated user (any role).
+
+**200 OK**
+
+```json
+{
+  "id": 1,
+  "name": "Rafsun Jani",
+  "email": "rafsun@example.com",
+  "phone": "+8801711000000",
+  "TIN": "123456789012",
+  "company": "QuestionPro",
+  "address": "Dhaka, Bangladesh"
+}
+```
+
+**401 Unauthorized** if the token is missing/invalid/expired.
+
+## 7. Update my user details — `PUT /api/users/me`
+
+```
+PUT /api/users/me
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Rafsun Jani",
+  "phone": "+8801711000001",
+  "tin": "123456789012",
+  "company": "QuestionPro Bangladesh",
+  "address": "Gulshan, Dhaka, Bangladesh"
+}
+```
+
+- `name`, `phone` and `tin` are required; `company` and `address` are optional.
+- `tin` follows the same format rule as appointments: exactly 10 digits (old format) or 12 digits (e-TIN).
+- `email` is not updatable through this endpoint — it's the account's login identity.
+
+**200 OK** — updated user, same shape as `GET /api/users/me`.
+
+**400 Bad Request** — validation failure (e.g. bad TIN or blank name/phone):
+
+```json
+{
+  "timestamp": "2026-07-26T10:19:00",
+  "status": 400,
+  "message": "Validation failed",
+  "errors": {
+    "tin": "TIN must be a 10-digit (old format) or 12-digit (e-TIN) number"
+  }
+}
+```
+
+## 8. Book an appointment — `POST /api/appointments`
 
 ```
 POST /api/appointments
@@ -214,7 +282,7 @@ Content-Type: application/json
 }
 ```
 
-## 7. List appointments — `GET /api/appointments`
+## 9. List appointments — `GET /api/appointments`
 
 ```
 GET /api/appointments?status=PENDING&fromDate=2026-08-01&toDate=2026-08-31&page=0&size=20&sort=appointmentDate,asc
@@ -249,7 +317,7 @@ All query params are optional. As a regular `USER` you always see only your own 
 }
 ```
 
-## 8. Upload a document — `POST /api/documents/upload`
+## 10. Upload a document — `POST /api/documents/upload`
 
 ```
 POST /api/documents/upload
@@ -294,7 +362,7 @@ curl -X POST http://localhost:8080/api/documents/upload \
 }
 ```
 
-## 9. List documents — `GET /api/documents`
+## 11. List documents — `GET /api/documents`
 
 ```
 GET /api/documents?page=0&size=20
@@ -306,7 +374,7 @@ Authorization: Bearer <token>
 
 **200 OK** — same paginated shape as appointments, `content` items shaped like the upload response above.
 
-## 10. Download a document — `GET /api/documents/{id}/download`
+## 12. Download a document — `GET /api/documents/{id}/download`
 
 ```
 GET /api/documents/5/download
@@ -335,7 +403,7 @@ Authorization: Bearer <token>
 }
 ```
 
-## 11. Error response shapes, at a glance
+## 13. Error response shapes, at a glance
 
 | Status | When         | Body                                                                                                                   |
 | ------ | ------------ | ---------------------------------------------------------------------------------------------------------------------- |

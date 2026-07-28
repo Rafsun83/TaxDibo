@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import * as authApi from "../lib/api/auth";
-import { clearSession, getToken, storeSession } from "../lib/api/client";
+import * as usersApi from "../lib/api/users";
+import { clearSession, getToken, storeSession, storeUser } from "../lib/api/client";
 import type { AuthUser, LoginPayload, RegisterPayload } from "../lib/api/types";
 import { decodeJwtPayload } from "../lib/jwt";
 
@@ -13,6 +14,8 @@ interface AuthContextValue {
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
+  updateUser: (user: AuthUser) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -65,8 +68,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateUser = (nextUser: AuthUser) => {
+    storeUser(nextUser);
+    setUser(nextUser);
+  };
+
+  const refreshUser = async () => {
+    const freshUser = await usersApi.getMe();
+    updateUser(freshUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ token, user, isAdmin, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ token, user, isAdmin, login, register, logout, updateUser, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

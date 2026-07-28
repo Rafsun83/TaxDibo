@@ -27,6 +27,10 @@ export function storeSession(token: string, user: unknown) {
   window.localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
+export function storeUser(user: unknown) {
+  window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function clearSession() {
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(USER_KEY);
