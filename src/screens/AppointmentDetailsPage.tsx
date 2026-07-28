@@ -1,12 +1,31 @@
+import {
+  ArrowLeft,
+  Check,
+  Download,
+  Eye,
+  FileText,
+  LayoutGrid,
+  List,
+  Loader2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Download, Eye, FileText, Loader2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  getAppointment,
+  uploadAppointmentDocument,
+} from "../lib/api/appointments";
 import { ApiError } from "../lib/api/client";
-import { getAppointment, uploadAppointmentDocument } from "../lib/api/appointments";
 import { downloadDocument } from "../lib/api/documents";
-import type { AppointmentDetails, AppointmentPurpose, AppointmentStatus, DocumentMeta } from "../lib/api/types";
+import type {
+  AppointmentDetails,
+  AppointmentPurpose,
+  AppointmentStatus,
+  DocumentMeta,
+} from "../lib/api/types";
 
 const PURPOSE_LABELS: Record<AppointmentPurpose, string> = {
   TAX_SUBMISSION: "Tax submission",
@@ -26,7 +45,11 @@ const TRACKING_STEPS: { status: AppointmentStatus; label: string }[] = [
 const LIVE_REFRESH_MS = 15_000;
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function formatDateTime(iso: string) {
@@ -54,7 +77,9 @@ function TrackingBar({ status }: { status: AppointmentStatus }) {
     );
   }
 
-  const currentIndex = TRACKING_STEPS.findIndex((step) => step.status === status);
+  const currentIndex = TRACKING_STEPS.findIndex(
+    (step) => step.status === status,
+  );
 
   return (
     <div className="flex items-center">
@@ -62,7 +87,10 @@ function TrackingBar({ status }: { status: AppointmentStatus }) {
         const reached = i <= currentIndex;
         const isLast = i === TRACKING_STEPS.length - 1;
         return (
-          <div key={step.status} className="flex flex-1 items-center last:flex-none">
+          <div
+            key={step.status}
+            className="flex flex-1 items-center last:flex-none"
+          >
             <div className="flex flex-col items-center gap-2">
               <div
                 className={`grid size-9 shrink-0 place-items-center rounded-full border-2 text-xs font-semibold transition-colors ${
@@ -73,7 +101,9 @@ function TrackingBar({ status }: { status: AppointmentStatus }) {
               >
                 {reached ? <Check className="size-4" /> : i + 1}
               </div>
-              <span className={`whitespace-nowrap text-xs font-medium ${reached ? "text-foreground" : "text-muted-foreground"}`}>
+              <span
+                className={`whitespace-nowrap text-xs font-medium ${reached ? "text-foreground" : "text-muted-foreground"}`}
+              >
                 {step.label}
               </span>
             </div>
@@ -101,7 +131,10 @@ function PreviewModal({
   const isImage = doc.contentType.startsWith("image/");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       <div
@@ -113,21 +146,38 @@ function PreviewModal({
             <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
               Document preview
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-foreground">{doc.originalFileName}</h2>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">
+              {doc.originalFileName}
+            </h2>
           </div>
-          <Button variant="ghost" size="icon" className="rounded-full" onClick={onClose} aria-label="Close modal">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
             <X className="size-4" />
           </Button>
         </div>
 
         <div className="overflow-y-auto p-6">
           {isImage ? (
-            <img src={objectUrl} alt={doc.originalFileName} className="mx-auto max-h-[70vh] rounded-2xl" />
+            <img
+              src={objectUrl}
+              alt={doc.originalFileName}
+              className="mx-auto max-h-[70vh] rounded-2xl"
+            />
           ) : doc.contentType === "application/pdf" ? (
-            <iframe src={objectUrl} title={doc.originalFileName} className="h-[70vh] w-full rounded-2xl border border-border/70" />
+            <iframe
+              src={objectUrl}
+              title={doc.originalFileName}
+              className="h-[70vh] w-full rounded-2xl border border-border/70"
+            />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Preview isn't available for this file type. Use Download to save it locally.
+              Preview isn't available for this file type. Use Download to save
+              it locally.
             </p>
           )}
         </div>
@@ -141,14 +191,23 @@ export default function AppointmentDetailsPage() {
   const navigate = useNavigate();
   const appointmentId = Number(id);
 
-  const [appointment, setAppointment] = useState<AppointmentDetails | null>(null);
+  const [appointment, setAppointment] = useState<AppointmentDetails | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [busyDocId, setBusyDocId] = useState<number | null>(null);
-  const [preview, setPreview] = useState<{ doc: DocumentMeta; url: string } | null>(null);
+  const [preview, setPreview] = useState<{
+    doc: DocumentMeta;
+    url: string;
+  } | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [thumbnails, setThumbnails] = useState<Record<number, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const requestedThumbnails = useRef<Set<number>>(new Set());
+  const thumbnailUrlsRef = useRef<string[]>([]);
 
   const fetchAppointment = useCallback(async () => {
     try {
@@ -156,7 +215,9 @@ export default function AppointmentDetailsPage() {
       setAppointment(result);
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load appointment.");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to load appointment.",
+      );
     } finally {
       setLoading(false);
     }
@@ -168,6 +229,37 @@ export default function AppointmentDetailsPage() {
     const interval = setInterval(fetchAppointment, LIVE_REFRESH_MS);
     return () => clearInterval(interval);
   }, [fetchAppointment]);
+
+  // Grid view shows real image thumbnails so a user can tell documents apart at a glance —
+  // fetch each image document's bytes once and cache the object URL.
+  useEffect(() => {
+    if (!appointment) return;
+    appointment.documents
+      .filter(
+        (doc) =>
+          doc.contentType.startsWith("image/") &&
+          !requestedThumbnails.current.has(doc.id),
+      )
+      .forEach((doc) => {
+        requestedThumbnails.current.add(doc.id);
+        downloadDocument(doc.id)
+          .then(({ blob }) => {
+            const url = URL.createObjectURL(blob);
+            thumbnailUrlsRef.current.push(url);
+            setThumbnails((prev) => ({ ...prev, [doc.id]: url }));
+          })
+          .catch(() => {
+            // best-effort — the grid falls back to a generic file icon if the thumbnail fails to load
+          });
+      });
+  }, [appointment]);
+
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: read the accumulated list at unmount time, not a mount-time snapshot
+      thumbnailUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -191,7 +283,9 @@ export default function AppointmentDetailsPage() {
       const { blob } = await downloadDocument(doc.id);
       setPreview({ doc, url: URL.createObjectURL(blob) });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to open document.");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to open document.",
+      );
     } finally {
       setBusyDocId(null);
     }
@@ -213,7 +307,9 @@ export default function AppointmentDetailsPage() {
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to download document.");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to download document.",
+      );
     } finally {
       setBusyDocId(null);
     }
@@ -221,7 +317,11 @@ export default function AppointmentDetailsPage() {
 
   return (
     <section className="flex-1 space-y-6 p-4 md:p-6">
-      <Button variant="ghost" className="gap-2 px-0 text-muted-foreground" onClick={() => navigate("/appointments")}>
+      <Button
+        variant="ghost"
+        className="gap-2 px-0 text-muted-foreground"
+        onClick={() => navigate("/appointments")}
+      >
         <ArrowLeft className="size-4" /> Back to appointments
       </Button>
 
@@ -245,8 +345,8 @@ export default function AppointmentDetailsPage() {
                   {PURPOSE_LABELS[appointment.purpose]}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Scheduled for {formatDate(appointment.appointmentDate)} · Requested{" "}
-                  {formatDateTime(appointment.createdAt)}
+                  Scheduled for {formatDate(appointment.appointmentDate)} ·
+                  Requested {formatDateTime(appointment.createdAt)}
                 </p>
               </div>
             </div>
@@ -256,7 +356,9 @@ export default function AppointmentDetailsPage() {
             </div>
 
             {error && (
-              <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">{error}</p>
+              <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+                {error}
+              </p>
             )}
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -270,7 +372,9 @@ export default function AppointmentDetailsPage() {
                   key={label}
                   className="rounded-2xl border border-border/70 bg-muted/60 p-4 text-sm text-muted-foreground shadow-sm"
                 >
-                  <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-foreground/80">{label}</span>
+                  <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-foreground/80">
+                    {label}
+                  </span>
                   <p className="text-foreground">{value}</p>
                 </div>
               ))}
@@ -280,11 +384,40 @@ export default function AppointmentDetailsPage() {
           <article className="overflow-hidden rounded-3xl border border-border/70 bg-background/90 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-6 py-5">
               <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Attachments</p>
-                <h3 className="mt-1 text-lg font-semibold text-foreground">Documents</h3>
+                <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
+                  Attachments
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-foreground">
+                  Documents
+                </h3>
               </div>
 
-              <div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 rounded-xl border border-border/70 bg-muted/60 p-1">
+                  <Button
+                    type="button"
+                    variant={viewMode === "grid" ? "secondary" : "ghost"}
+                    size="icon"
+                    className="size-8 rounded-lg"
+                    onClick={() => setViewMode("grid")}
+                    aria-label="Grid view"
+                    title="Grid view"
+                  >
+                    <LayoutGrid className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={viewMode === "list" ? "secondary" : "ghost"}
+                    size="icon"
+                    className="size-8 rounded-lg"
+                    onClick={() => setViewMode("list")}
+                    aria-label="List view"
+                    title="List view"
+                  >
+                    <List className="size-4" />
+                  </Button>
+                </div>
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -292,8 +425,16 @@ export default function AppointmentDetailsPage() {
                   className="hidden"
                   onChange={handleUpload}
                 />
-                <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
-                  {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="gap-2"
+                >
+                  {uploading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Upload className="size-4" />
+                  )}
                   {uploading ? "Uploading..." : "Upload document"}
                 </Button>
               </div>
@@ -309,18 +450,60 @@ export default function AppointmentDetailsPage() {
               <p className="py-16 text-center text-sm text-muted-foreground">
                 No documents attached to this appointment yet.
               </p>
+            ) : viewMode === "grid" ? (
+              <div className="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3 lg:grid-cols-4">
+                {appointment.documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleView(doc)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") handleView(doc);
+                    }}
+                    aria-disabled={busyDocId === doc.id}
+                    className={`group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-muted/60 text-left shadow-sm outline-none transition hover:border-primary/60 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/40 ${busyDocId === doc.id ? "cursor-wait opacity-60" : "cursor-pointer"}`}
+                  >
+                    <div className="flex aspect-square items-center justify-center overflow-hidden bg-background/60">
+                      {thumbnails[doc.id] ? (
+                        <img
+                          src={thumbnails[doc.id]}
+                          alt={doc.originalFileName}
+                          className="size-full object-cover transition group-hover:scale-105"
+                        />
+                      ) : (
+                        <FileText className="size-10 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="border-t border-border/70 px-3 py-2.5">
+                      <p className="truncate text-xs font-medium text-foreground">
+                        {doc.originalFileName}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {formatBytes(doc.fileSize)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <ul className="divide-y divide-border/50">
                 {appointment.documents.map((doc) => (
-                  <li key={doc.id} className="flex items-center justify-between gap-3 px-6 py-4">
+                  <li
+                    key={doc.id}
+                    className="flex items-center justify-between gap-3 px-6 py-4"
+                  >
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground">
                         <FileText className="size-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">{doc.originalFileName}</p>
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {doc.originalFileName}
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatBytes(doc.fileSize)} · {formatDate(doc.uploadedAt)}
+                          {formatBytes(doc.fileSize)} ·{" "}
+                          {formatDate(doc.uploadedAt)}
                         </p>
                       </div>
                     </div>
@@ -352,7 +535,13 @@ export default function AppointmentDetailsPage() {
         </>
       )}
 
-      {preview && <PreviewModal doc={preview.doc} objectUrl={preview.url} onClose={closePreview} />}
+      {preview && (
+        <PreviewModal
+          doc={preview.doc}
+          objectUrl={preview.url}
+          onClose={closePreview}
+        />
+      )}
     </section>
   );
 }
