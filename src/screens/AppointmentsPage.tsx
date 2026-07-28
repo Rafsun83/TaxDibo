@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { ApiError } from "../lib/api/client";
 import { listAppointments } from "../lib/api/appointments";
@@ -24,6 +25,7 @@ function formatDate(iso: string) {
 }
 
 export default function AppointmentsPage() {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,8 @@ export default function AppointmentsPage() {
                 {appointments.map((appt, i) => (
                   <tr
                     key={appt.id}
-                    className={`transition-colors hover:bg-muted/40 ${i !== appointments.length - 1 ? "border-b border-border/50" : ""}`}
+                    onClick={() => navigate(`/appointments/${appt.id}`)}
+                    className={`cursor-pointer transition-colors hover:bg-muted/40 ${i !== appointments.length - 1 ? "border-b border-border/50" : ""}`}
                   >
                     <td className="px-6 py-4 font-medium text-foreground">
                       {PURPOSE_LABELS[appt.purpose]}

@@ -63,10 +63,15 @@ export interface Appointment extends AppointmentPayload {
 export interface DocumentMeta {
   id: number;
   userId: number;
+  appointmentId: number | null;
   originalFileName: string;
   contentType: string;
   fileSize: number;
   uploadedAt: string;
+}
+
+export interface AppointmentDetails extends Appointment {
+  documents: DocumentMeta[];
 }
 
 export interface Page<T> {

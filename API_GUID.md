@@ -317,7 +317,82 @@ All query params are optional. As a regular `USER` you always see only your own 
 }
 ```
 
-## 10. Upload a document — `POST /api/documents/upload`
+## 10. Appointment details — `GET /api/appointments/{id}`
+
+```
+GET /api/appointments/10
+Authorization: Bearer <token>
+```
+
+Returns the appointment's own fields (status, purpose, date, etc.) plus every document that was uploaded against it via the endpoint below. A regular `USER` can only fetch their own appointment (403 otherwise); `ADMIN` can fetch any.
+
+**200 OK**
+
+```json
+{
+  "id": 10,
+  "userId": 1,
+  "name": "Rafsun Jani",
+  "email": "rafsun@example.com",
+  "phone": "+8801711000000",
+  "tin": "123456789012",
+  "purpose": "TAX_SUBMISSION",
+  "appointmentDate": "2026-08-10",
+  "status": "PENDING",
+  "createdAt": "2026-07-26T10:20:00",
+  "documents": [
+    {
+      "id": 5,
+      "userId": 1,
+      "appointmentId": 10,
+      "originalFileName": "tax-return.pdf",
+      "contentType": "application/pdf",
+      "fileSize": 245678,
+      "uploadedAt": "2026-07-26T10:25:00"
+    }
+  ]
+}
+```
+
+**403 Forbidden** if a `USER` requests another user's appointment; **404 Not Found** if the appointment ID doesn't exist.
+
+## 11. Upload a document for a specific appointment — `POST /api/appointments/{id}/documents`
+
+```
+POST /api/appointments/10/documents
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+file: <binary>
+```
+
+curl example:
+
+```bash
+curl -X POST http://localhost:8080/api/appointments/10/documents \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@/path/to/tax-return.pdf"
+```
+
+Same validation as `POST /api/documents/upload` (allowed content types, 10MB cap, stored on local disk) — the only difference is the resulting document is linked to appointment `10` (`appointmentId` is set in the response and it shows up under that appointment's `GET /api/appointments/{id}` details). Ownership is checked against the appointment, not just the file: a `USER` can only upload against their own appointment (403 otherwise); `ADMIN` can upload against any.
+
+**201 Created**
+
+```json
+{
+  "id": 5,
+  "userId": 1,
+  "appointmentId": 10,
+  "originalFileName": "tax-return.pdf",
+  "contentType": "application/pdf",
+  "fileSize": 245678,
+  "uploadedAt": "2026-07-26T10:25:00"
+}
+```
+
+**403 Forbidden** / **404 Not Found** — same as the appointment details endpoint above, checked before the file is stored.
+
+## 12. Upload a document — `POST /api/documents/upload`
 
 ```
 POST /api/documents/upload
@@ -338,6 +413,7 @@ curl -X POST http://localhost:8080/api/documents/upload \
 - Allowed content types: `application/pdf`, `image/jpeg`, `image/png`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document` (DOCX).
 - Max size: 10MB (`spring.servlet.multipart.max-file-size`).
 - Files are saved on local disk under `file.upload-dir` (per-user subfolder); only the metadata below is stored in the response/DB.
+- `appointmentId` is `null` here — use `POST /api/appointments/{id}/documents` (above) to link a document to an appointment at upload time.
 
 **201 Created**
 
@@ -345,6 +421,7 @@ curl -X POST http://localhost:8080/api/documents/upload \
 {
   "id": 5,
   "userId": 1,
+  "appointmentId": null,
   "originalFileName": "tax-return.pdf",
   "contentType": "application/pdf",
   "fileSize": 245678,
@@ -362,7 +439,7 @@ curl -X POST http://localhost:8080/api/documents/upload \
 }
 ```
 
-## 11. List documents — `GET /api/documents`
+## 13. List documents — `GET /api/documents`
 
 ```
 GET /api/documents?page=0&size=20
@@ -374,7 +451,7 @@ Authorization: Bearer <token>
 
 **200 OK** — same paginated shape as appointments, `content` items shaped like the upload response above.
 
-## 12. Download a document — `GET /api/documents/{id}/download`
+## 14. Download a document — `GET /api/documents/{id}/download`
 
 ```
 GET /api/documents/5/download
@@ -403,7 +480,7 @@ Authorization: Bearer <token>
 }
 ```
 
-## 13. Error response shapes, at a glance
+## 15. Error response shapes, at a glance
 
 | Status | When         | Body                                                                                                                   |
 | ------ | ------------ | ---------------------------------------------------------------------------------------------------------------------- |
