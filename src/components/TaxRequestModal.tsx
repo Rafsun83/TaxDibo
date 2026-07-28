@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../lib/api/client";
-import { createAppointment } from "../lib/api/appointments";
-import type { AppointmentPurpose } from "../lib/api/types";
+import { createAppointment, listAppointments } from "../lib/api/appointments";
+import type { Appointment, AppointmentPurpose, AppointmentStatus } from "../lib/api/types";
 
 interface TaxRequestModalProps {
   onClose: () => void;
@@ -16,6 +16,21 @@ const PURPOSE_OPTIONS: { value: AppointmentPurpose; label: string }[] = [
   { value: "DOCUMENT_REVIEW", label: "Document review" },
   { value: "OTHER", label: "Other" },
 ];
+
+const PURPOSE_LABEL: Record<AppointmentPurpose, string> = Object.fromEntries(
+  PURPOSE_OPTIONS.map(({ value, label }) => [value, label]),
+) as Record<AppointmentPurpose, string>;
+
+const STATUS_LABEL: Record<AppointmentStatus, string> = {
+  PENDING: "pending",
+  CONFIRMED: "confirmed",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+};
+
+// An appointment only blocks re-booking the same purpose while it's still active —
+// once it's COMPLETED (or CANCELLED) the user is free to book that purpose again.
+const ACTIVE_STATUSES: AppointmentStatus[] = ["PENDING", "CONFIRMED"];
 
 interface FormState {
   name: string;
@@ -43,14 +58,42 @@ export default function TaxRequestModal({ onClose }: TaxRequestModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [existingAppointments, setExistingAppointments] = useState<Appointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  const loadAppointments = useCallback(async () => {
+    try {
+      const result = await listAppointments({ size: 100 });
+      setExistingAppointments(result.content);
+    } catch {
+      // best-effort — if this fails we simply skip the duplicate-purpose guard client-side
+    } finally {
+      setLoadingAppointments(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, no data-fetching lib in use
+    loadAppointments();
+  }, [loadAppointments]);
+
+  const blockingAppointment = existingAppointments.find(
+    (a) => a.purpose === form.purpose && ACTIVE_STATUSES.includes(a.status),
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setFieldErrors({});
+    if (blockingAppointment) {
+      setError(
+        `You already have a ${STATUS_LABEL[blockingAppointment.status]} ${PURPOSE_LABEL[form.purpose]} appointment. You can book another once it's completed.`,
+      );
+      return;
+    }
     setSubmitting(true);
     try {
       await createAppointment(form);
@@ -191,6 +234,13 @@ export default function TaxRequestModal({ onClose }: TaxRequestModalProps) {
                   ))}
                 </select>
                 {fieldErrors.purpose && <span className="text-xs text-destructive">{fieldErrors.purpose}</span>}
+                {blockingAppointment && (
+                  <span className="text-xs text-amber-500">
+                    You already have a {STATUS_LABEL[blockingAppointment.status]}{" "}
+                    {PURPOSE_LABEL[form.purpose]} appointment on {blockingAppointment.appointmentDate}.
+                    You can book another once it's completed.
+                  </span>
+                )}
               </label>
 
               <label className="flex flex-col gap-1.5">
@@ -217,7 +267,11 @@ export default function TaxRequestModal({ onClose }: TaxRequestModalProps) {
               )}
 
               <div className="flex gap-3 pt-2">
-                <Button type="submit" className="flex-1" disabled={submitting}>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={submitting || loadingAppointments || !!blockingAppointment}
+                >
                   {submitting ? "Submitting..." : "Submit Request"}
                 </Button>
                 <Button type="button" variant="outline" onClick={onClose}>
