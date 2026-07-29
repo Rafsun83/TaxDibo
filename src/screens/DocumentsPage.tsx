@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, Eye, Loader2, Upload, X } from "lucide-react";
+import { Download, Eye, Loader2, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "../lib/api/client";
-import { downloadDocument, listDocuments, uploadDocument } from "../lib/api/documents";
+import { deleteDocument, downloadDocument, listDocuments, uploadDocument } from "../lib/api/documents";
 import type { DocumentMeta } from "../lib/api/types";
 
 const PAGE_SIZE = 10;
@@ -85,6 +85,46 @@ function PreviewModal({
   );
 }
 
+function ConfirmDeleteModal({
+  doc,
+  deleting,
+  onConfirm,
+  onClose,
+}: {
+  doc: DocumentMeta;
+  deleting: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      <div
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-2xl shadow-black/40"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-5">
+          <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Delete document</p>
+          <h2 className="mt-1 text-lg font-semibold text-foreground">{doc.originalFileName}</h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            This will permanently delete this document. This action cannot be undone.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border/70 px-6 py-4">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button variant="destructive" size="sm" className="gap-1.5" onClick={onConfirm} disabled={deleting}>
+            {deleting ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<DocumentMeta[]>([]);
   const [page, setPage] = useState(0);
@@ -95,6 +135,8 @@ export default function DocumentsPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [busyDocId, setBusyDocId] = useState<number | null>(null);
   const [preview, setPreview] = useState<{ doc: DocumentMeta; url: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DocumentMeta | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocuments = useCallback(async (targetPage: number) => {
@@ -159,6 +201,20 @@ export default function DocumentsPage() {
   const closePreview = () => {
     if (preview) URL.revokeObjectURL(preview.url);
     setPreview(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteDocument(deleteTarget.id);
+      setDocuments((prev) => prev.filter((d) => d.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to delete document.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -248,6 +304,15 @@ export default function DocumentsPage() {
                         >
                           <Download className="size-3.5" /> Download
                         </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="gap-1.5 rounded-xl text-xs"
+                          disabled={busyDocId === doc.id}
+                          onClick={() => setDeleteTarget(doc)}
+                        >
+                          <Trash2 className="size-3.5" /> Delete
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -273,6 +338,14 @@ export default function DocumentsPage() {
       </article>
 
       {preview && <PreviewModal doc={preview.doc} objectUrl={preview.url} onClose={closePreview} />}
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          doc={deleteTarget}
+          deleting={deleting}
+          onConfirm={handleDelete}
+          onClose={() => setDeleteTarget(null)}
+        />
+      )}
     </section>
   );
 }

@@ -21,3 +21,7 @@ export function listDocuments(params: ListDocumentsParams = {}) {
 export function downloadDocument(id: number) {
   return apiDownload(`/documents/${id}/download`);
 }
+
+export function deleteDocument(id: number) {
+  return apiRequest<void>(`/documents/${id}`, { method: "DELETE" });
+}

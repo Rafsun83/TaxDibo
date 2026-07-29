@@ -42,7 +42,12 @@ export type AppointmentPurpose =
   | "DOCUMENT_REVIEW"
   | "OTHER";
 
-export type AppointmentStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+export type AppointmentStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "READY";
 
 export interface AppointmentPayload {
   name: string;

@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   List,
   Loader2,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -16,6 +17,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
+  deleteAppointmentDocument,
   getAppointment,
   uploadAppointmentDocument,
 } from "../lib/api/appointments";
@@ -38,6 +40,7 @@ const PURPOSE_LABELS: Record<AppointmentPurpose, string> = {
 const TRACKING_STEPS: { status: AppointmentStatus; label: string }[] = [
   { status: "PENDING", label: "Requested" },
   { status: "CONFIRMED", label: "Confirmed" },
+  { status: "READY", label: "File Ready" },
   { status: "COMPLETED", label: "Completed" },
 ];
 
@@ -298,6 +301,69 @@ function ExistingDocumentsModal({
   );
 }
 
+function ConfirmDeleteModal({
+  doc,
+  deleting,
+  onConfirm,
+  onClose,
+}: {
+  doc: DocumentMeta;
+  deleting: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      <div
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-2xl shadow-black/40"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-5">
+          <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
+            Delete document
+          </p>
+          <h2 className="mt-1 text-lg font-semibold text-foreground">
+            {doc.originalFileName}
+          </h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            This will permanently delete this document from the appointment.
+            This action cannot be undone.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border/70 px-6 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-1.5"
+            onClick={onConfirm}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="size-3.5" />
+            )}
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppointmentDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -325,6 +391,8 @@ export default function AppointmentDetailsPage() {
   const [pickerError, setPickerError] = useState<string | null>(null);
   const [attachingDocId, setAttachingDocId] = useState<number | null>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DocumentMeta | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const requestedThumbnails = useRef<Set<number>>(new Set());
   const thumbnailUrlsRef = useRef<string[]>([]);
@@ -409,7 +477,9 @@ export default function AppointmentDetailsPage() {
       );
     } catch (err) {
       setPickerError(
-        err instanceof ApiError ? err.message : "Failed to load your documents.",
+        err instanceof ApiError
+          ? err.message
+          : "Failed to load your documents.",
       );
     } finally {
       setPickerLoading(false);
@@ -434,7 +504,9 @@ export default function AppointmentDetailsPage() {
       });
       await uploadAppointmentDocument(appointmentId, file);
       await fetchAppointment();
-      setPickerDocuments((prev) => prev?.filter((d) => d.id !== doc.id) ?? null);
+      setPickerDocuments(
+        (prev) => prev?.filter((d) => d.id !== doc.id) ?? null,
+      );
     } catch (err) {
       setAttachError(
         err instanceof ApiError ? err.message : "Failed to attach document.",
@@ -479,6 +551,22 @@ export default function AppointmentDetailsPage() {
       );
     } finally {
       setBusyDocId(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteAppointmentDocument(appointmentId, deleteTarget.id);
+      await fetchAppointment();
+      setDeleteTarget(null);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Failed to delete document.",
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -637,8 +725,22 @@ export default function AppointmentDetailsPage() {
                       if (e.key === "Enter" || e.key === " ") handleView(doc);
                     }}
                     aria-disabled={busyDocId === doc.id}
-                    className={`group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-muted/60 text-left shadow-sm outline-none transition hover:border-primary/60 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/40 ${busyDocId === doc.id ? "cursor-wait opacity-60" : "cursor-pointer"}`}
+                    className={`group relative flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-muted/60 text-left shadow-sm outline-none transition hover:border-primary/60 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/40 ${busyDocId === doc.id ? "cursor-wait opacity-60" : "cursor-pointer"}`}
                   >
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute right-2 top-2 z-10 size-7 rounded-full opacity-0 shadow-sm transition group-hover:opacity-100"
+                      aria-label="Delete document"
+                      title="Delete document"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(doc);
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
                     <div className="flex aspect-square items-center justify-center overflow-hidden bg-background/60">
                       {thumbnails[doc.id] ? (
                         <img
@@ -701,6 +803,15 @@ export default function AppointmentDetailsPage() {
                       >
                         <Download className="size-3.5" /> Download
                       </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="gap-1.5 rounded-xl text-xs"
+                        disabled={busyDocId === doc.id}
+                        onClick={() => setDeleteTarget(doc)}
+                      >
+                        <Trash2 className="size-3.5" /> Delete
+                      </Button>
                     </div>
                   </li>
                 ))}
@@ -727,6 +838,15 @@ export default function AppointmentDetailsPage() {
           attachError={attachError}
           onAttach={handleAttachExisting}
           onClose={closePicker}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          doc={deleteTarget}
+          deleting={deleting}
+          onConfirm={handleDelete}
+          onClose={() => setDeleteTarget(null)}
         />
       )}
     </section>

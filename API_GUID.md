@@ -480,7 +480,69 @@ Authorization: Bearer <token>
 }
 ```
 
-## 15. Error response shapes, at a glance
+## 15. Delete a document — `DELETE /api/documents/{id}`
+
+```
+DELETE /api/documents/5
+Authorization: Bearer <token>
+```
+
+Removes the document row and its file on disk. A regular `USER` can only delete their own documents (403 otherwise); `ADMIN` can delete any.
+
+**204 No Content** — deleted, no response body.
+
+**403 Forbidden** if a `USER` tries to delete another user's document:
+
+```json
+{
+  "timestamp": "2026-07-29T10:29:00",
+  "status": 403,
+  "message": "You do not have permission to perform this action"
+}
+```
+
+**404 Not Found** if the document ID doesn't exist:
+
+```json
+{
+  "timestamp": "2026-07-29T10:29:30",
+  "status": 404,
+  "message": "Document not found: 5"
+}
+```
+
+## 16. Delete an appointment's document — `DELETE /api/appointments/{id}/documents/{documentId}`
+
+```
+DELETE /api/appointments/10/documents/5
+Authorization: Bearer <token>
+```
+
+Same as the general document delete above, but also verifies that document `5` actually belongs to appointment `10` — deleting it through the wrong appointment ID returns 404 even if the document exists elsewhere. A regular `USER` can only delete documents on their own appointment (403 otherwise); `ADMIN` can delete on any appointment.
+
+**204 No Content** — deleted, no response body.
+
+**403 Forbidden** if a `USER` targets someone else's appointment:
+
+```json
+{
+  "timestamp": "2026-07-29T10:30:00",
+  "status": 403,
+  "message": "You do not have permission to perform this action"
+}
+```
+
+**404 Not Found** if the appointment doesn't exist, or the document doesn't exist, or the document isn't linked to that appointment:
+
+```json
+{
+  "timestamp": "2026-07-29T10:30:30",
+  "status": 404,
+  "message": "Document 5 not found for appointment 10"
+}
+```
+
+## 17. Error response shapes, at a glance
 
 | Status | When         | Body                                                                                                                   |
 | ------ | ------------ | ---------------------------------------------------------------------------------------------------------------------- |

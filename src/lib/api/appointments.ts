@@ -35,3 +35,7 @@ export function uploadAppointmentDocument(id: number, file: File) {
   form.append("file", file);
   return apiRequest<DocumentMeta>(`/appointments/${id}/documents`, { method: "POST", body: form });
 }
+
+export function deleteAppointmentDocument(id: number, documentId: number) {
+  return apiRequest<void>(`/appointments/${id}/documents/${documentId}`, { method: "DELETE" });
+}
