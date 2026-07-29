@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import * as authApi from "../lib/api/auth";
@@ -48,43 +48,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return decodeJwtPayload(token)?.role === "ADMIN";
   }, [token]);
 
-  const login = async (payload: LoginPayload) => {
+  const login = useCallback(async (payload: LoginPayload) => {
     const res = await authApi.login(payload);
     storeSession(res.accessToken, res.user);
     setToken(res.accessToken);
     setUser(res.user);
-  };
+  }, []);
 
-  const register = async (payload: RegisterPayload) => {
+  const register = useCallback(async (payload: RegisterPayload) => {
     const res = await authApi.register(payload);
     storeSession(res.accessToken, res.user);
     setToken(res.accessToken);
     setUser(res.user);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     clearSession();
     setToken(null);
     setUser(null);
-  };
+  }, []);
 
-  const updateUser = (nextUser: AuthUser) => {
+  const updateUser = useCallback((nextUser: AuthUser) => {
     storeUser(nextUser);
     setUser(nextUser);
-  };
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const freshUser = await usersApi.getMe();
     updateUser(freshUser);
-  };
+  }, [updateUser]);
 
-  return (
-    <AuthContext.Provider
-      value={{ token, user, isAdmin, login, register, logout, updateUser, refreshUser }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ token, user, isAdmin, login, register, logout, updateUser, refreshUser }),
+    [token, user, isAdmin, login, register, logout, updateUser, refreshUser],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
