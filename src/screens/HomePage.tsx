@@ -1,52 +1,19 @@
-import { ArrowRight, BadgeCheck, ShieldCheck, Users } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Calculator,
+  CalendarCheck,
+  Clock,
+  FileText,
+  ShieldCheck,
+  UploadCloud,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TaxRequestModal from "../components/TaxRequestModal";
-
-const TAX_SLABS = [
-  { limit: 375_000, rate: 0, label: "First Tk. 3.75 lac" },
-  { limit: 300_000, rate: 0.1, label: "Next Tk. 3 lac" },
-  { limit: 400_000, rate: 0.15, label: "Next Tk. 4 lac" },
-  { limit: 500_000, rate: 0.2, label: "Next Tk. 5 lac" },
-  { limit: 2_000_000, rate: 0.25, label: "Next Tk. 20 lac" },
-  { limit: Infinity, rate: 0.3, label: "Above Tk. 35.75 lac" },
-];
-
-interface SlabResult {
-  label: string;
-  rate: number;
-  taxableAmount: number;
-  taxAmount: number;
-}
-
-function calculateTax(annualIncome: number): {
-  slabs: SlabResult[];
-  total: number;
-} {
-  let remaining = annualIncome;
-  let total = 0;
-  const slabs: SlabResult[] = [];
-
-  for (const slab of TAX_SLABS) {
-    if (remaining <= 0) break;
-    const taxable =
-      slab.limit === Infinity ? remaining : Math.min(remaining, slab.limit);
-    const tax = taxable * slab.rate;
-    slabs.push({
-      label: slab.label,
-      rate: slab.rate,
-      taxableAmount: taxable,
-      taxAmount: tax,
-    });
-    total += tax;
-    remaining -= taxable;
-  }
-
-  return { slabs, total };
-}
-
-function fmt(amount: number) {
-  return new Intl.NumberFormat("en-BD").format(Math.round(amount));
-}
+import { useAuth } from "../context/AuthContext";
 
 const TRUST_BADGES = [
   { icon: BadgeCheck, text: "NBR Registered" },
@@ -54,34 +21,83 @@ const TRUST_BADGES = [
   { icon: Users, text: "500+ Clients Served" },
 ];
 
+const QUICK_ACTIONS = [
+  {
+    label: "Tax Calculator",
+    description: "Estimate your annual tax in seconds",
+    icon: Calculator,
+    path: "/tax-calculator",
+  },
+  {
+    label: "Documents",
+    description: "Upload and manage your tax files",
+    icon: FileText,
+    path: "/documents",
+  },
+  {
+    label: "Appointments",
+    description: "Track your booked sessions",
+    icon: CalendarCheck,
+    path: "/appointments",
+  },
+  {
+    label: "Profile",
+    description: "Keep your details up to date",
+    icon: UserRound,
+    path: "/profile",
+  },
+];
+
+const FEATURES = [
+  {
+    icon: ShieldCheck,
+    title: "Bank-level Security",
+    description: "Your documents and data stay encrypted and confidential.",
+  },
+  {
+    icon: Clock,
+    title: "Fast Turnaround",
+    description: "Most filings are reviewed and completed within days.",
+  },
+  {
+    icon: BadgeCheck,
+    title: "Certified Experts",
+    description: "NBR-registered professionals handle every submission.",
+  },
+  {
+    icon: Users,
+    title: "Dedicated Support",
+    description: "Real people to answer questions at every step.",
+  },
+];
+
+const STEPS = [
+  {
+    icon: Calculator,
+    title: "Estimate your tax",
+    description: "Use the calculator to see roughly what you owe.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "Book an appointment",
+    description: "Pick a date and tell us what you need help with.",
+  },
+  {
+    icon: UploadCloud,
+    title: "Upload your documents",
+    description: "Share your paperwork securely from the Documents page.",
+  },
+  {
+    icon: BadgeCheck,
+    title: "We handle the filing",
+    description: "Our experts take it from there — you're done.",
+  },
+];
+
 export default function HomePage() {
-  const [monthly, setMonthly] = useState("");
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
-
-  const monthlySalary = parseFloat(monthly) || 0;
-  const annualIncome = monthlySalary * 12;
-  const { slabs, total: annualTax } = calculateTax(annualIncome);
-  const monthlyTax = annualTax / 12;
-  const effectiveRate = annualIncome > 0 ? (annualTax / annualIncome) * 100 : 0;
-
-  const hasResult = monthlySalary > 0;
-
-  const STATS = [
-    {
-      label: "Annual Income",
-      value: hasResult ? `৳ ${fmt(annualIncome)}` : "—",
-    },
-    {
-      label: "Total Annual Tax",
-      value: hasResult ? `৳ ${fmt(annualTax)}` : "—",
-      highlight: true,
-    },
-    { label: "Monthly Tax", value: hasResult ? `৳ ${fmt(monthlyTax)}` : "—" },
-    {
-      label: "Effective Rate",
-      value: hasResult ? `${effectiveRate.toFixed(2)}%` : "—",
-    },
-  ];
 
   return (
     <section className="flex-1 space-y-6 p-4 md:p-6">
@@ -101,7 +117,9 @@ export default function HomePage() {
             </span>
 
             <h2 className="mt-4 text-3xl font-bold leading-tight text-primary-foreground md:text-4xl">
-              Simplify Your Tax.
+              {user
+                ? `Welcome back, ${user.name.split(" ")[0]}.`
+                : "Simplify Your Tax."}
               <br />
               Let Experts Handle It.
             </h2>
@@ -134,6 +152,13 @@ export default function HomePage() {
               Book An Appointment
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </button>
+            <button
+              onClick={() => navigate("/tax-calculator")}
+              className="flex items-center gap-2 rounded-2xl border border-primary-foreground/30 px-6 py-3 text-sm font-semibold text-primary-foreground/90 transition hover:bg-primary-foreground/10"
+            >
+              <Calculator className="size-4" />
+              Try Tax Calculator
+            </button>
             <p className="text-xs text-primary-foreground/50">
               Free consultation · No hidden fees
             </p>
@@ -143,128 +168,91 @@ export default function HomePage() {
 
       {showModal && <TaxRequestModal onClose={() => setShowModal(false)} />}
 
-      {/* ── Calculator input ────────────────────────────────────── */}
-      <article className="rounded-3xl border border-border/70 bg-background/90 p-6 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
-          Bangladesh Income Tax
-        </p>
-        <h3 className="mt-2 text-xl font-semibold text-foreground">
-          Tax Calculator
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Enter your monthly salary to estimate your annual income tax.
-        </p>
-
-        <div className="mt-5 flex max-w-sm flex-col gap-1.5">
-          <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Monthly Salary (BDT)
-          </label>
-          <div className="flex items-center overflow-hidden rounded-2xl border border-border/70 bg-muted/60 transition focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/40">
-            <span className="border-r border-border/70 px-4 py-3 text-sm font-semibold text-muted-foreground">
-              ৳
-            </span>
-            <input
-              type="number"
-              min="0"
-              placeholder="e.g. 50000"
-              value={monthly}
-              onChange={(e) => setMonthly(e.target.value)}
-              className="w-full bg-transparent px-4 py-3 text-foreground outline-none placeholder:text-muted-foreground/50"
-            />
-          </div>
-        </div>
-      </article>
-
-      {/* ── Summary stats ───────────────────────────────────────── */}
+      {/* ── Quick actions ────────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {STATS.map(({ label, value, highlight }) => (
-          <article
-            key={label}
-            className={`rounded-3xl border border-border/70 p-5 shadow-sm ${highlight ? "bg-primary/10" : "bg-background/90"}`}
+        {QUICK_ACTIONS.map(({ label, description, icon: Icon, path }) => (
+          <button
+            key={path}
+            onClick={() => navigate(path)}
+            className="group flex flex-col items-start gap-3 rounded-3xl border border-border/70 bg-background/90 p-5 text-left shadow-sm  hover:border-primary/40"
           >
-            <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
-              {label}
-            </p>
-            <p
-              className={`mt-3 text-2xl font-semibold ${highlight ? "text-primary" : "text-foreground"}`}
-            >
-              {value}
-            </p>
-          </article>
+            <div className="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary  group-hover:bg-primary group-hover:text-primary-foreground">
+              <Icon className="size-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">{label}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {description}
+              </p>
+            </div>
+          </button>
         ))}
       </div>
 
-      {/* ── Slab breakdown ──────────────────────────────────────── */}
-      <article className="overflow-hidden rounded-3xl border border-border/70 bg-background/90 shadow-sm">
-        <div className="border-b border-border/70 px-6 py-5">
-          <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
-            Tax slab breakdown
-          </p>
-          <h3 className="mt-1 text-lg font-semibold text-foreground">
-            How your tax is calculated
-          </h3>
-        </div>
+      {/* ── Why choose us ────────────────────────────────────────── */}
+      <article className="rounded-3xl border border-border/70 bg-background/90 p-6 shadow-sm md:p-8">
+        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
+          Why TaxDibo
+        </p>
+        <h3 className="mt-2 text-xl font-semibold text-foreground">
+          Built for stress-free tax filing
+        </h3>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border/70 text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                <th className="px-6 py-3 text-left font-medium">Income slab</th>
-                <th className="px-6 py-3 text-right font-medium">Rate</th>
-                <th className="px-6 py-3 text-right font-medium">
-                  Taxable amount
-                </th>
-                <th className="px-6 py-3 text-right font-medium">Tax</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(hasResult
-                ? slabs
-                : TAX_SLABS.map((s) => ({
-                    label: s.label,
-                    rate: s.rate,
-                    taxableAmount: 0,
-                    taxAmount: 0,
-                  }))
-              ).map((row, i, arr) => (
-                <tr
-                  key={row.label}
-                  className={`transition-colors hover:bg-muted/40 ${i !== arr.length - 1 ? "border-b border-border/50" : ""}`}
-                >
-                  <td className="px-6 py-4 font-medium text-foreground">
-                    {row.label}
-                  </td>
-                  <td className="px-6 py-4 text-right text-muted-foreground">
-                    {(row.rate * 100).toFixed(0)}%
-                  </td>
-                  <td className="px-6 py-4 text-right text-muted-foreground">
-                    {hasResult ? `৳ ${fmt(row.taxableAmount)}` : "—"}
-                  </td>
-                  <td
-                    className={`px-6 py-4 text-right font-semibold ${hasResult && row.taxAmount > 0 ? "text-foreground" : "text-muted-foreground"}`}
-                  >
-                    {hasResult ? `৳ ${fmt(row.taxAmount)}` : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            {hasResult && (
-              <tfoot>
-                <tr className="border-t-2 border-border/70 bg-muted/30">
-                  <td
-                    colSpan={3}
-                    className="px-6 py-4 font-semibold text-foreground"
-                  >
-                    Total Annual Tax
-                  </td>
-                  <td className="px-6 py-4 text-right text-lg font-bold text-primary">
-                    ৳ {fmt(annualTax)}
-                  </td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURES.map(({ icon: Icon, title, description }) => (
+            <div key={title} className="flex flex-col gap-2">
+              <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                <Icon className="size-5" />
+              </div>
+              <p className="font-medium text-foreground">{title}</p>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+          ))}
         </div>
+      </article>
+
+      {/* ── How it works ─────────────────────────────────────────── */}
+      <article className="rounded-3xl border border-border/70 bg-background/90 p-6 shadow-sm md:p-8">
+        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
+          Process
+        </p>
+        <h3 className="mt-2 text-xl font-semibold text-foreground">
+          How it works
+        </h3>
+
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map(({ icon: Icon, title, description }, i) => (
+            <div key={title} className="relative flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {i + 1}
+                </span>
+                <Icon className="size-4 text-primary" />
+              </div>
+              <p className="font-medium text-foreground">{title}</p>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+          ))}
+        </div>
+      </article>
+
+      {/* ── Bottom CTA ───────────────────────────────────────────── */}
+      <article className="flex flex-col items-start gap-4 rounded-3xl border border-primary/30 bg-primary/10 p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between md:p-8">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">
+            Ready to get your taxes sorted?
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Book a session with a certified tax professional today.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="group flex shrink-0 items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]"
+        >
+          Book An Appointment
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+        </button>
       </article>
     </section>
   );

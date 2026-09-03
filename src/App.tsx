@@ -9,6 +9,7 @@ import HomePage from "./screens/HomePage";
 import LoginPage from "./screens/LoginPage";
 import ProfilePage from "./screens/ProfilePage";
 import RegisterPage from "./screens/RegisterPage";
+import TaxCalculatorPage from "./screens/TaxCalculatorPage";
 import UsersPage from "./screens/UsersPage";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         }
       >
         <Route path="/" element={<HomePage />} />
+        <Route path="/tax-calculator" element={<TaxCalculatorPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/appointments" element={<AppointmentsPage />} />
         <Route path="/appointments/:id" element={<AppointmentDetailsPage />} />

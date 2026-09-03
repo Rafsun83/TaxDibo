@@ -1,5 +1,6 @@
 import {
   CalendarCheck,
+  Calculator,
   ChevronsLeft,
   ChevronsRight,
   FileText,
@@ -14,6 +15,7 @@ import { useAuth } from "../context/AuthContext";
 
 const NAV_ITEMS = [
   { label: "Home", path: "/", icon: Home },
+  { label: "Tax Calculator", path: "/tax-calculator", icon: Calculator },
   { label: "Documents", path: "/documents", icon: FileText },
   { label: "Appointments", path: "/appointments", icon: CalendarCheck },
 ];
