@@ -86,7 +86,7 @@ function TrackingBar({ status }: { status: AppointmentStatus }) {
   );
 
   return (
-    <div className="flex items-center">
+    <div className="flex min-w-max items-center">
       {TRACKING_STEPS.map((step, i) => {
         const reached = i <= currentIndex;
         const isLast = i === TRACKING_STEPS.length - 1;
@@ -606,7 +606,7 @@ export default function AppointmentDetailsPage() {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 overflow-x-auto pb-1">
               <TrackingBar status={appointment.status} />
             </div>
 
@@ -647,7 +647,7 @@ export default function AppointmentDetailsPage() {
                 </h3>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
                 <div className="flex items-center gap-1 rounded-xl border border-border/70 bg-muted/60 p-1">
                   <Button
                     type="button"
@@ -683,7 +683,7 @@ export default function AppointmentDetailsPage() {
                 <Button
                   variant="outline"
                   onClick={openPicker}
-                  className="gap-2"
+                  className="flex-1 gap-2 sm:flex-none"
                 >
                   <FolderOpen className="size-4" />
                   Choose existing
@@ -691,7 +691,7 @@ export default function AppointmentDetailsPage() {
                 <Button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="gap-2"
+                  className="flex-1 gap-2 sm:flex-none"
                 >
                   {uploading ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -768,7 +768,7 @@ export default function AppointmentDetailsPage() {
                 {appointment.documents.map((doc) => (
                   <li
                     key={doc.id}
-                    className="flex items-center justify-between gap-3 px-6 py-4"
+                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground">
@@ -792,7 +792,7 @@ export default function AppointmentDetailsPage() {
                         disabled={busyDocId === doc.id}
                         onClick={() => handleView(doc)}
                       >
-                        <Eye className="size-3.5" /> View
+                        <Eye className="size-3.5" /> <span className="hidden sm:inline">View</span>
                       </Button>
                       <Button
                         variant="outline"
@@ -801,7 +801,7 @@ export default function AppointmentDetailsPage() {
                         disabled={busyDocId === doc.id}
                         onClick={() => handleDownload(doc)}
                       >
-                        <Download className="size-3.5" /> Download
+                        <Download className="size-3.5" /> <span className="hidden sm:inline">Download</span>
                       </Button>
                       <Button
                         variant="destructive"
@@ -810,7 +810,7 @@ export default function AppointmentDetailsPage() {
                         disabled={busyDocId === doc.id}
                         onClick={() => setDeleteTarget(doc)}
                       >
-                        <Trash2 className="size-3.5" /> Delete
+                        <Trash2 className="size-3.5" /> <span className="hidden sm:inline">Delete</span>
                       </Button>
                     </div>
                   </li>

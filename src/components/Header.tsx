@@ -1,4 +1,4 @@
-import { Bell, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import { Bell, LogOut, Menu, Moon, Sun, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,15 @@ interface HeaderProps {
   title: string;
   theme: "light" | "dark";
   onToggleTheme: () => void;
+  onOpenMobileNav: () => void;
 }
 
-export default function Header({ title, theme, onToggleTheme }: HeaderProps) {
+export default function Header({
+  title,
+  theme,
+  onToggleTheme,
+  onOpenMobileNav,
+}: HeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -21,11 +27,24 @@ export default function Header({ title, theme, onToggleTheme }: HeaderProps) {
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 px-4 py-4 md:px-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
-          {user ? user.name : "Workspace"}
-        </p>
-        <h1 className="text-2xl font-semibold md:text-3xl">{title}</h1>
+      <div className="flex min-w-0 items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="shrink-0 rounded-full lg:hidden"
+          onClick={onOpenMobileNav}
+          aria-label="Open menu"
+        >
+          <Menu className="size-4" />
+        </Button>
+        <div className="min-w-0">
+          <p className="truncate text-xs uppercase tracking-[0.35em] text-muted-foreground">
+            {user ? user.name : "Workspace"}
+          </p>
+          <h1 className="truncate text-xl font-semibold sm:text-2xl md:text-3xl">
+            {title}
+          </h1>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 md:gap-3">

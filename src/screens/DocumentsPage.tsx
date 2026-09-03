@@ -323,7 +323,7 @@ export default function DocumentsPage() {
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border/70 px-6 py-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 px-4 py-4 text-sm text-muted-foreground sm:px-6">
             <span>Page {page + 1} of {totalPages}</span>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>

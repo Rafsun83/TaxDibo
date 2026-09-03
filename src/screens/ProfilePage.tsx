@@ -122,21 +122,21 @@ export default function ProfilePage() {
   return (
     <section className="flex-1 space-y-6 p-4 md:p-6">
       <article className="rounded-3xl border border-border/70 bg-background/90 p-6 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="grid size-20 place-items-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground shadow-lg shadow-primary/20">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="grid size-16 shrink-0 place-items-center rounded-full bg-primary text-xl font-semibold text-primary-foreground shadow-lg shadow-primary/20 sm:size-20 sm:text-2xl">
               {initials(user.name) || "?"}
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
                 Profile
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-foreground">{user.name}</h2>
-              <p className="text-muted-foreground">{user.email}</p>
+              <h2 className="mt-2 truncate text-xl font-semibold text-foreground sm:text-2xl">{user.name}</h2>
+              <p className="truncate text-muted-foreground">{user.email}</p>
             </div>
           </div>
           {!editing && (
-            <Button variant="outline" onClick={startEditing}>
+            <Button variant="outline" onClick={startEditing} className="shrink-0">
               Edit profile
             </Button>
           )}

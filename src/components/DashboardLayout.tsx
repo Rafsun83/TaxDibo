@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import Header from "./Header";
@@ -20,9 +20,15 @@ export default function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => window.localStorage.getItem("taxdibo-sidebar-collapsed") === "true",
   );
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { pathname } = useLocation();
 
   const title = PAGE_TITLES[pathname] ?? "Dashboard";
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- close the mobile drawer on navigation (e.g. browser back/forward), not just link clicks
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -42,10 +48,20 @@ export default function DashboardLayout() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.12),transparent_25%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#172554_100%)] text-foreground">
       <div className="mx-auto flex h-full w-full gap-2 p-2 lg:gap-2 lg:p-2">
-        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggle={toggleSidebar}
+          mobileOpen={mobileNavOpen}
+          onMobileClose={() => setMobileNavOpen(false)}
+        />
 
-        <main className="flex h-full flex-1 flex-col overflow-hidden rounded-sm border border-border/70 bg-card/95 shadow-2xl shadow-black/10 backdrop-blur">
-          <Header title={title} theme={theme} onToggleTheme={toggleTheme} />
+        <main className="flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-sm border border-border/70 bg-card/95 shadow-2xl shadow-black/10 backdrop-blur">
+          <Header
+            title={title}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            onOpenMobileNav={() => setMobileNavOpen(true)}
+          />
 
           <div className="flex-1 overflow-y-auto">
             <Outlet />
