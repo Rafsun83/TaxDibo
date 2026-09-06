@@ -7,7 +7,11 @@ interface AuthLayoutProps {
   children: ReactNode;
 }
 
-export default function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
+export default function AuthLayout({
+  title,
+  subtitle,
+  children,
+}: AuthLayoutProps) {
   return (
     <div className="flex h-screen w-screen items-center justify-center overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.12),transparent_25%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#172554_100%)] p-4 text-foreground">
       <div className="w-full max-w-md rounded-3xl border border-border/70 bg-card/95 p-8 shadow-2xl shadow-black/40 backdrop-blur">

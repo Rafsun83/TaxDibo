@@ -52,8 +52,8 @@ export default function Sidebar({
     <Button
       key={path}
       variant={pathname === path ? "secondary" : "ghost"}
-      className={`w-full cursor-pointer  rounded-md px-2 py-4 text-left shadow-none ${
-        collapsed ? "lg:justify-center" : "justify-start"
+      className={`w-full cursor-pointer justify-start rounded-md px-2 py-4 text-left shadow-none ${
+        collapsed ? "lg:justify-center" : ""
       }`}
       title={collapsed ? label : undefined}
       aria-label={label}

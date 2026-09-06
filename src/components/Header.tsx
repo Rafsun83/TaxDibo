@@ -26,8 +26,8 @@ export default function Header({
   };
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 px-4 py-4 md:px-6">
-      <div className="flex min-w-0 items-center gap-2">
+    <header className="flex flex-nowrap items-center justify-between gap-2 border-b border-border/80 px-4 py-4 md:gap-3 md:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <Button
           variant="outline"
           size="icon"
@@ -37,7 +37,7 @@ export default function Header({
         >
           <Menu className="size-4" />
         </Button>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-xs uppercase tracking-[0.35em] text-muted-foreground">
             {user ? user.name : "Workspace"}
           </p>
@@ -47,7 +47,7 @@ export default function Header({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-3">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
         <Button variant="ghost" size="icon" aria-label="Notifications">
           <Bell className="size-4" />
         </Button>

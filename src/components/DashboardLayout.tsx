@@ -46,7 +46,8 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.12),transparent_25%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#172554_100%)] text-foreground">
+    // bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.12),transparent_25%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#172554_100%)]
+    <div className="h-screen w-screen overflow-hidden text-foreground">
       <div className="mx-auto flex h-full w-full gap-2 p-2 lg:gap-2 lg:p-2">
         <Sidebar
           collapsed={sidebarCollapsed}
